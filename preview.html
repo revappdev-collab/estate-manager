@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile App Preview</title>
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --border: rgba(255, 255, 255, 0.16);
+      --frameStrokeOuter: #c1c2c4;
+      --frameStrokeInner: #dcdcdf;
+      --frameStrokeGlow: #b2b2b9;
+      --screenBg: #ffffff;
+      --homeBar: #000000;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f7fb;
+        --shadow: rgba(0, 0, 0, 0.15);
+        --border: rgba(0, 0, 0, 0.16);
+        --frameStrokeOuter: #c1c2c4;
+        --frameStrokeInner: #d0d0d6;
+        --frameStrokeGlow: #b2b2b9;
+        --screenBg: #ffffff;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --frameStrokeOuter: #37373a;
+        --frameStrokeInner: #454548;
+        --frameStrokeGlow: #454548;
+        --homeBar: rgba(255, 255, 255, 0.64);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+      display: none;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+    }
+
+    /* Pure CSS repeating grid background (no image file). */
+    .gridBg {
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px 16px;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 34px 34px;
+      background-position: -1px -1px;
+    }
+
+    @media (prefers-color-scheme: light) {
+      .gridBg {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+      }
+    }
+
+    .phoneWrap {
+      width: 340px;
+      height: 700px;
+      max-width: 92vw;
+      max-height: 86vh;
+      aspect-ratio: 9 / 19.5;
+      position: relative;
+    }
+
+    /*
+        Safari iOS fallback: an HTML div overlaid on the SVG,
+        positioned to match the foreignObject screen window
+        (x=18, y=18, w=390, h=844 inside the 427x881 viewBox).
+        Percentages: left=18/427=4.216%, top=18/881=2.043%,
+        width=390/427=91.335%, height=844/881=95.801%.
+      */
+    .safariScreen {
+      display: none;
+      position: absolute;
+      left: 4.216%;
+      top: 2.043%;
+      width: 91.335%;
+      height: 95.801%;
+      z-index: 2;
+      overflow: hidden;
+      padding: var(--ss-pad-top, 7.35%) 0 var(--ss-pad-bottom, 4.03%) 0;
+      border-radius: var(--ss-radius, 14.1%);
+      background: var(--screenBg);
+    }
+
+    html.ios .safariScreen {
+      display: block;
+    }
+
+    html.ios .foScreen {
+      display: none;
+    }
+
+    .phoneSvg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: drop-shadow(0 18px 50px var(--shadow));
+    }
+
+    /* Applied inside the SVG foreignObject (HTML subtree). */
+    .foScreen {
+      width: 100%;
+      height: 100%;
+      padding-top: 62px;
+      padding-bottom: 34px;
+      overflow: hidden;
+      border-radius: 55.75px;
+      background: var(--screenBg);
+    }
+
+    .overlaySvg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #fff;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="gridBg">
+    <div class="phoneWrap" aria-label="iPhone frame preview">
+      <svg class="phoneSvg" width="100%" height="100%" viewBox="0 0 427 881" fill="none"
+        xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <g clip-path="url(#clip0)">
+          <rect width="426.667" height="880.667" rx="70" fill="black"></rect>
+          <rect x="3.83268" y="3.83366" width="419" height="873" rx="66.1667" style="stroke: var(--frameStrokeInner)"
+            stroke-width="4.33333"></rect>
+          <rect x="0.833333" y="0.833333" width="425" height="879" rx="69.1667" style="stroke: var(--frameStrokeOuter)"
+            stroke-width="1.66667"></rect>
+
+          <g opacity="0.9" filter="url(#filter0_f)">
+            <rect x="1.66602" y="2" width="423.333" height="877" rx="68.6667" style="stroke: var(--frameStrokeGlow)"
+              stroke-width="1.66667"></rect>
+          </g>
+          <g opacity="0.8" filter="url(#filter1_f)">
+            <rect x="7.33268" y="7.33366" width="412" height="866" rx="62.6667" stroke="#646464"
+              stroke-width="0.666667"></rect>
+          </g>
+
+          <!-- Side buttons (iPhone 17 Pro style) -->
+          <!-- Left: Action button (small) -->
+          <rect x="-1.8" y="168" width="3.2" height="38" rx="1.6" fill="#1a1a1c" stroke="#2a2a2e" stroke-width="0.5">
+          </rect>
+          <!-- Left: Volume up -->
+          <rect x="-1.8" y="222" width="3.2" height="62" rx="1.6" fill="#1a1a1c" stroke="#2a2a2e" stroke-width="0.5">
+          </rect>
+          <!-- Left: Volume down -->
+          <rect x="-1.8" y="296" width="3.2" height="62" rx="1.6" fill="#1a1a1c" stroke="#2a2a2e" stroke-width="0.5">
+          </rect>
+          <!-- Right: Power/Side button -->
+          <rect x="425.3" y="230" width="3.2" height="90" rx="1.6" fill="#1a1a1c" stroke="#2a2a2e" stroke-width="0.5">
+          </rect>
+
+          <foreignObject x="18" y="18" width="390" height="844" clip-path="url(#clip1)">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="foScreen">
+              <iframe id="previewFrame" title="App Preview"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                referrerpolicy="no-referrer"></iframe>
+            </div>
+          </foreignObject>
+        </g>
+
+        <defs>
+          <filter id="filter0_f" x="-0.166992" y="0.166504" width="427" height="880.667" filterUnits="userSpaceOnUse"
+            color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood>
+            <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend>
+            <feGaussianBlur stdDeviation="0.5" result="effect1_foregroundBlur"></feGaussianBlur>
+          </filter>
+          <filter id="filter1_f" x="6.33236" y="6.33382" width="414" height="868" filterUnits="userSpaceOnUse"
+            color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood>
+            <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend>
+            <feGaussianBlur stdDeviation="0.333333" result="effect1_foregroundBlur"></feGaussianBlur>
+          </filter>
+
+          <clipPath id="clip0">
+            <rect width="426.667" height="880.667" rx="70" fill="white"></rect>
+          </clipPath>
+          <clipPath id="clip1">
+            <rect x="18" y="18" width="390" height="844" rx="55" fill="white"></rect>
+          </clipPath>
+        </defs>
+      </svg>
+
+      <!-- Overlay SVG: renders ON TOP of foreignObject HTML content -->
+      <svg class="overlaySvg" viewBox="0 0 427 881" fill="none" xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid meet">
+        <!-- Status bar: Time -->
+        <text id="statusTime" x="72" y="55" fill="black" font-size="17" font-weight="600"
+          font-family="system-ui, -apple-system, 'SF Pro Text', Segoe UI, Roboto, sans-serif"
+          letter-spacing="-0.2">9:41</text>
+
+        <!-- Cellular signal bars -->
+        <g opacity="0.88">
+          <rect x="297" y="49" width="3.4" height="5" rx="0.6" fill="black"></rect>
+          <rect x="302" y="47" width="3.4" height="7" rx="0.6" fill="black"></rect>
+          <rect x="307" y="44.5" width="3.4" height="9.5" rx="0.6" fill="black"></rect>
+          <rect x="312" y="42" width="3.4" height="12" rx="0.6" fill="black"></rect>
+        </g>
+
+        <!-- WiFi icon -->
+        <g opacity="0.88">
+          <path
+            d="M341.382 45.8776C339.208 43.6888 336.196 42.3335 332.867 42.3335C329.528 42.3335 326.508 43.6969 324.333 45.8974L326.219 47.7831C327.911 46.0652 330.265 45.0002 332.867 45.0002C335.459 45.0002 337.805 46.057 339.496 47.7633L341.382 45.8776Z"
+            fill="black"></path>
+          <path
+            d="M338.318 48.9418C336.928 47.5371 334.999 46.6668 332.867 46.6668C330.725 46.6668 328.788 47.5453 327.397 48.9616L329.283 50.8474C330.191 49.9136 331.462 49.3335 332.867 49.3335C334.263 49.3335 335.525 49.9053 336.432 50.8275L338.318 48.9418Z"
+            fill="black"></path>
+          <path
+            d="M335.253 52.006C334.648 51.3855 333.803 51.0002 332.867 51.0002C331.922 51.0002 331.068 51.3938 330.462 52.0261L332.847 54.412L335.253 52.006Z"
+            fill="black"></path>
+        </g>
+
+        <!-- Battery -->
+        <g opacity="0.88">
+          <rect x="351.166" y="43.167" width="22.3333" height="10.6667" rx="2.16667" stroke="black" stroke-width="1"
+            opacity="0.35"></rect>
+          <rect x="352.5" y="44.5" width="19.5" height="8" rx="1.2" fill="black"></rect>
+          <path
+            d="M374.666 47C375.402 47 375.999 47.597 375.999 48.3333V48.6667C375.999 49.403 375.402 50 374.666 50V47Z"
+            fill="black" opacity="0.4"></path>
+        </g>
+
+        <!-- Home indicator -->
+        <rect width="139" height="5" rx="2.5" transform="matrix(-1 0 0 1 284 849)" style="fill: var(--homeBar)"></rect>
+
+        <!-- Dynamic Island -->
+        <rect x="151.666" y="31.667" width="123.333" height="36" rx="18" fill="black"></rect>
+        <rect x="241.999" y="41.3338" width="16.6667" height="16.6667" rx="8.33333" fill="#121212" opacity="0.75">
+        </rect>
+      </svg>
+
+      <!-- Safari iOS fallback: iframe as normal HTML, hidden by default -->
+      <div class="safariScreen">
+        <iframe id="previewFrameSafari" title="App Preview"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups" referrerpolicy="no-referrer"></iframe>
+      </div>
+    </div>
+  </div>
+
+    <script>
+      const PRODUCTION_URL = "https://demo.sourapps.com/";
+
+    function defaultAppUrl() {
+      if (location.protocol === "file:") {
+        return "http://localhost:8080/";
+      }
+      if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+        return location.origin + "/";
+      }
+      if (location.pathname.endsWith("preview.html")) {
+        return location.origin + location.pathname.replace(/preview\.html$/, "");
+      }
+      return PRODUCTION_URL;
+    }
+
+    function safeParseUrl(maybeUrl) {
+      let url;
+      try {
+        url = new URL(maybeUrl);
+      } catch {
+        return null;
+      }
+      if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+      return url.toString();
+    }
+
+    (function init() {
+      // Detect iOS (all iOS browsers are WebKit under the hood).
+      var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+      if (isIOS) document.documentElement.classList.add("ios");
+
+      const params = new URLSearchParams(location.search);
+      const overrideUrl = params.get("url");
+      const finalUrl = safeParseUrl(overrideUrl) || defaultAppUrl();
+
+      // Set src only on the iframe that will actually be visible.
+      if (isIOS) {
+        document.getElementById("previewFrameSafari").src = finalUrl;
+      } else {
+        document.getElementById("previewFrame").src = finalUrl;
+      }
+
+      // Keep the Safari fallback screen geometry proportional on resize.
+      // foreignObject screen: x=18,y=18,w=390,h=844 => pad-top=62/844, pad-bottom=34/844, radius=55/390
+      var safariEl = document.querySelector(".safariScreen");
+      function updateSafariMetrics() {
+        if (!safariEl) return;
+        var r = safariEl.getBoundingClientRect();
+        var padTop = r.height * (62 / 844);
+        var padBot = r.height * (34 / 844);
+        var radius = r.width * (55 / 390);
+        safariEl.style.setProperty("--ss-pad-top", Math.round(padTop) + "px");
+        safariEl.style.setProperty("--ss-pad-bottom", Math.round(padBot) + "px");
+        safariEl.style.setProperty("--ss-radius", Math.round(radius) + "px");
+      }
+      if (isIOS) {
+        updateSafariMetrics();
+        window.addEventListener("resize", function () {
+          requestAnimationFrame(updateSafariMetrics);
+        }, { passive: true });
+      }
+
+      // Live clock in the status bar.
+      const timeEl = document.getElementById("statusTime");
+      function tick() {
+        if (!timeEl) return;
+        timeEl.textContent = new Intl.DateTimeFormat(undefined, {
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date());
+      }
+      tick();
+      setInterval(tick, 30000);
+    })();
+  </script>
+</body>
+
+</html>
