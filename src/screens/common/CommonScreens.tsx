@@ -240,6 +240,7 @@ export function CalendarScreen() {
 
 export function EventDetailScreen({ id }: { id: string }) {
   const { data, property, name } = useEstate();
+  const go = useGo();
   const event = data.events.find((e) => e.id === id);
   if (!event) return <Page back title="Event"><EmptyState image="empty-tasks" title="Event removed" body="It is no longer on the calendar." /></Page>;
   return (
@@ -247,6 +248,11 @@ export function EventDetailScreen({ id }: { id: string }) {
       <p className="text-[13px] uppercase tracking-wide text-gold-text">{event.type}</p>
       <h1 className="mt-1 text-[28px] font-bold">{event.title}</h1>
       <p className="mt-2 text-[17px]">{event.detail}</p>
+      {event.taskId && (
+        <button className="mt-3 text-[17px] font-semibold text-gold-text" onClick={() => go(`/app/tasks/${event.taskId}`)}>
+          Open linked task
+        </button>
+      )}
       <Group>
         <Row title={property(event.propertyId)?.name ?? "Property"} subtitle={event.location} />
         <Row title={usDate(event.start)} subtitle={`${usTime(event.start)} – ${usTime(event.end)}`} />

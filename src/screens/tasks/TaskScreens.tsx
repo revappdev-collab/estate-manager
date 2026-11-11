@@ -10,6 +10,7 @@ import {
   Page,
   Photo,
   PriorityChip,
+  ProgressBar,
   Row,
   SearchField,
   Section,
@@ -416,6 +417,11 @@ export function TaskCreateScreen() {
   );
 }
 
+const SEED_GALLERY: Record<string, string[]> = {
+  "t-gate": ["vendor-security", "property-1", "maint-before-2"],
+  "t-bulb": ["maint-before-1", "vendor-electric", "maint-after-1"],
+};
+
 const WORK_FLOW = [
   { id: "new", label: "New" },
   { id: "acknowledged", label: "Seen" },
@@ -445,7 +451,9 @@ export function TaskDetailScreen({ id }: { id: string }) {
   const mine = task.progress.find((p) => p.personId === me.id);
   const doneCount = task.checklist.filter((c) => c.done).length;
   const nextCheck = task.checklist.findIndex((c) => !c.done);
-  const photos = task.photos.length > 1 || task.id !== "t-gate" ? task.photos : ["vendor-security", "property-1", "maint-before-2"];
+  const storedPhotos = task.photos ?? [];
+  const gallery = storedPhotos.length > 1 ? storedPhotos : SEED_GALLERY[task.id] ?? storedPhotos;
+  const photos = gallery;
   const photoIndex = photos.length === 0 ? 0 : Math.min(shot, photos.length - 1);
   const flowKey = status === "closed" ? "completed" : status === "overdue" || status === "blocked" ? "in_progress" : status;
   const flowIndex = Math.max(0, WORK_FLOW.findIndex((s) => s.id === flowKey));

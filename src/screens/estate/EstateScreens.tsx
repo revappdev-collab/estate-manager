@@ -510,7 +510,12 @@ export function VendorDetailScreen({ id }: { id: string }) {
         <Group>
           <Row title={vendor.contact} subtitle="Primary contact" />
           <a className="flex min-h-14 items-center border-b border-line px-4 text-[17px]" href={`tel:${vendor.phone}`}>{vendor.phone}</a>
-          <Row title={vendor.email} subtitle="Email" />
+          <a className="flex min-h-14 items-center justify-between border-b border-line px-4" href={`mailto:${vendor.email}`}>
+            <span>
+              <span className="block text-[17px]">{vendor.email}</span>
+              <span className="block text-[15px] text-soft">Email</span>
+            </span>
+          </a>
           <Row title="COI" subtitle={`Expires ${vendor.coiExpires}`} />
           <Row title="License" subtitle={vendor.license} />
         </Group>
@@ -565,6 +570,7 @@ export function TeamListScreen() {
 
 export function TeamDetailScreen({ id }: { id: string }) {
   const { data, me, person } = useEstate();
+  const go = useGo();
   const who = person(id);
   if (!who || !me || me.role === "owner") return <Page back title="Staff"><Locked /></Page>;
   const blocks = data.availability.filter((a) => a.personId === id);
@@ -578,7 +584,7 @@ export function TeamDetailScreen({ id }: { id: string }) {
         <p className="text-[17px]">{who.propertyIds.map((pid) => data.properties.find((p) => p.id === pid)?.name).join(", ")}</p>
       </Section>
       <Section title="Open work">
-        <Group>{tasks.map((t) => <Row key={t.id} title={t.title} />)}</Group>
+        <Group>{tasks.map((t) => <Row key={t.id} title={t.title} onClick={() => go(`/app/tasks/${t.id}`)} />)}</Group>
       </Section>
       <Section title="Availability">
         <div className="grid grid-cols-7 gap-1">

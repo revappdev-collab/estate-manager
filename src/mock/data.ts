@@ -212,7 +212,7 @@ export function createSeed(): Data {
         comments: [
           { id: "cm1", authorId: "james", body: "@Maria the spare bulbs are in the closet behind the service stair.", at: at(0, 7, 40) },
         ],
-        photos: ["maint-before-1"],
+        photos: ["maint-before-1", "vendor-electric", "maint-after-1"],
         history: [
           { id: "h1", at: at(-1, 18, 0), actorId: "james", text: "Task created and assigned to Maria Lopez." },
           { id: "h2", at: at(0, 8, 5), actorId: "maria", text: "Acknowledged." },
