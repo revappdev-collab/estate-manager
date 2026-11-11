@@ -209,13 +209,12 @@ export function TaskCreateScreen() {
     { label: "Tomorrow", value: shiftDay(today, 1) },
     { label: "In 3 days", value: shiftDay(today, 3) },
   ];
-  const canNext = step === 0 ? title.trim().length > 0 : step === 2 ? assignees.length > 0 : true;
-
   const assign = () => {
     const id = uid("task");
+    const dueDate = new Date(`${due}T21:00:00.000Z`);
     const task: Task = {
       id,
-      title: title.trim(),
+      title: title.trim() || "Untitled task",
       description: description.trim() || "Created from the house iPhone.",
       category,
       priority,
@@ -223,7 +222,7 @@ export function TaskCreateScreen() {
       room: room || "General",
       assigneeIds: assignees,
       progress: assignees.map((personId) => ({ personId, status: "new", at: new Date().toISOString() })),
-      due: new Date(`${due}T21:00:00.000Z`).toISOString(),
+      due: Number.isNaN(dueDate.getTime()) ? new Date().toISOString() : dueDate.toISOString(),
       start: new Date().toISOString(),
       checklist: checks.map((label) => ({ id: uid("c"), label, done: false })),
       comments: [],
@@ -380,8 +379,7 @@ export function TaskCreateScreen() {
                 type="button"
                 className="mt-3 h-12 shrink-0 rounded-[14px] bg-navy px-4 text-[15px] font-semibold text-white dark:bg-gold dark:text-navy"
                 onClick={() => {
-                  const next = draft.trim();
-                  if (!next) return;
+                  const next = draft.trim() || "Step";
                   setChecks((list) => (list.includes(next) ? list : [...list, next]));
                   setDraft("");
                 }}
@@ -401,16 +399,9 @@ export function TaskCreateScreen() {
 
       <div className="mt-6">
         {step < 3 ? (
-          <>
-            <Button disabled={!canNext} onClick={() => canNext && setStep((n) => n + 1)}>
-              Continue
-            </Button>
-            {!canNext && <p className="mt-2 text-center text-[13px] text-soft">{step === 0 ? "Add a short title to continue." : "Choose at least one person."}</p>}
-          </>
+          <Button onClick={() => setStep((n) => n + 1)}>Continue</Button>
         ) : (
-          <Button disabled={!title.trim() || assignees.length === 0} onClick={assign}>
-            Assign task
-          </Button>
+          <Button onClick={assign}>Assign task</Button>
         )}
       </div>
     </Page>
@@ -614,7 +605,7 @@ export function TaskDetailScreen({ id }: { id: string }) {
         </Group>
         <div className="mt-2 flex gap-2">
           <input aria-label="Comment" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write a note, use @Maria" className="h-12 min-w-0 flex-1 rounded-[14px] border border-line bg-surface px-3 text-[17px]" />
-          <button className="h-12 rounded-[14px] bg-navy px-4 font-semibold text-white dark:bg-gold dark:text-navy" onClick={() => { if (!comment.trim()) return; dispatch({ type: "comment", taskId: task.id, authorId: me.id, body: comment.trim() }); setComment(""); pushToast("Comment sent"); }}>Send</button>
+          <button className="h-12 rounded-[14px] bg-navy px-4 font-semibold text-white dark:bg-gold dark:text-navy" onClick={() => { dispatch({ type: "comment", taskId: task.id, authorId: me.id, body: comment.trim() || "Note" }); setComment(""); pushToast("Comment sent"); }}>Send</button>
         </div>
       </Section>
 
@@ -633,7 +624,7 @@ export function TaskDetailScreen({ id }: { id: string }) {
       <Sheet open={block} onClose={() => setBlock(false)} title="Blocked">
         <Field label="Reason" value={reason} onChange={setReason} />
         <div className="mt-3">
-          <Button onClick={() => { if (!reason.trim()) return; act("blocked", reason.trim()); setBlock(false); }}>Save block</Button>
+          <Button onClick={() => { act("blocked", reason.trim() || "Blocked"); setBlock(false); }}>Save block</Button>
         </div>
       </Sheet>
       <Sheet open={reassign} onClose={() => setReassign(false)} title="Reassign" tall>

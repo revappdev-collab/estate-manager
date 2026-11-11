@@ -55,7 +55,6 @@ export function RequestCreateScreen({ staff = false }: { staff?: boolean }) {
   const [due, setDue] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [done, setDone] = useState<string>();
-  const [error, setError] = useState("");
   if (!me) return null;
   if (done) {
     return (
@@ -84,7 +83,7 @@ export function RequestCreateScreen({ staff = false }: { staff?: boolean }) {
         />
       </label>
       <div className="space-y-3">
-        <Field label="Title" value={title} onChange={setTitle} error={error || undefined} />
+        <Field label="Title" value={title} onChange={setTitle} />
         <Field label="What should we know" value={description} onChange={setDescription} />
         <label className="block text-[13px] text-soft">Property
           <select aria-label="Property" className="mt-1 h-12 w-full rounded-[14px] bg-surface px-3 text-[17px]" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
@@ -110,13 +109,9 @@ export function RequestCreateScreen({ staff = false }: { staff?: boolean }) {
         </div>
         <Button
           onClick={() => {
-            if (title.trim().length < 3) {
-              setError("Give the request a short title.");
-              return;
-            }
             const issue: Issue = {
               id: uid("iss"),
-              title: title.trim(),
+              title: title.trim() || "Request",
               description: description.trim() || "Photo attached.",
               propertyId,
               room: room || "General",

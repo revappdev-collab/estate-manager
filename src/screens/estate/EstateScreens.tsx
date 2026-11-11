@@ -392,7 +392,7 @@ export function ShoppingDetailScreen({ id }: { id: string }) {
       </div>
       <div className="mt-3 flex gap-2">
         <input aria-label="Add item" value={item} onChange={(e) => setItem(e.target.value)} placeholder="Add an item" className="h-12 flex-1 rounded-[14px] bg-surface px-3" />
-        <button className="h-12 rounded-[14px] bg-navy px-4 text-white dark:bg-gold dark:text-navy" onClick={() => { if (!item.trim()) return; dispatch({ type: "shopping-item", listId: list.id, actorId: me.id, item: { id: uid("si"), name: item.trim(), qty: 1, unit: "each", status: "to_buy", requestedBy: me.id } }); setItem(""); }}>Add</button>
+        <button className="h-12 rounded-[14px] bg-navy px-4 text-white dark:bg-gold dark:text-navy" onClick={() => { dispatch({ type: "shopping-item", listId: list.id, actorId: me.id, item: { id: uid("si"), name: item.trim() || "Item", qty: 1, unit: "each", status: "to_buy", requestedBy: me.id } }); setItem(""); }}>Add</button>
       </div>
       <div className="mt-3">
         <label className="flex min-h-12 items-center justify-center rounded-[14px] bg-surface text-[17px]">
@@ -722,7 +722,7 @@ export function SafetyScreen() {
         <div className="space-y-3">
           <Field label="What happened" value={title} onChange={setTitle} />
           <Field label="Details" value={detail} onChange={setDetail} />
-          <Button onClick={() => { if (!title.trim()) return; dispatch({ type: "incident", incident: { id: uid("inc"), title, propertyId: "main", reporterId: me.id, at: new Date().toISOString(), detail } }); setTitle(""); setDetail(""); pushToast("Incident saved"); }}>Submit report</Button>
+          <Button onClick={() => { dispatch({ type: "incident", incident: { id: uid("inc"), title: title.trim() || "Incident", propertyId: "main", reporterId: me.id, at: new Date().toISOString(), detail } }); setTitle(""); setDetail(""); pushToast("Incident saved"); }}>Submit report</Button>
         </div>
         {data.incidents.length > 0 && <Group>{data.incidents.map((i) => <Row key={i.id} title={i.title} subtitle={usDateTime(i.at)} />)}</Group>}
       </Section>
@@ -792,13 +792,13 @@ export function AlertComposeScreen() {
           </button>
         ))}
         <Button onClick={() => {
-          if (title.trim().length < 2) return;
           const id = uid("al");
           const recipientIds = all ? people.map((p) => p.id) : picked;
+          const alertTitle = title.trim() || "Alert";
           dispatch({
             type: "create-alert",
             actorId: me.id,
-            alert: { id, title: title.trim(), message: message.trim() || title.trim(), propertyId, priority, senderId: me.id, starts: new Date().toISOString(), ends: new Date(Date.UTC(2026, 10, 14, 21)).toISOString(), recipientIds, acks: {} },
+            alert: { id, title: alertTitle, message: message.trim() || alertTitle, propertyId, priority, senderId: me.id, starts: new Date().toISOString(), ends: new Date(Date.UTC(2026, 10, 14, 21)).toISOString(), recipientIds, acks: {} },
           });
           haptic("success");
           pushToast("Alert sent");

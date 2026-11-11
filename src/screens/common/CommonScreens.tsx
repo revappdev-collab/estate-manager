@@ -170,8 +170,7 @@ export function ChatScreen({ id }: { id: string }) {
         className="mt-4 flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!text.trim()) return;
-          dispatch({ type: "send-message", conversationId: convo.id, authorId: me.id, body: text.trim() });
+          dispatch({ type: "send-message", conversationId: convo.id, authorId: me.id, body: text.trim() || "Message" });
           setText("");
         }}
       >
@@ -301,12 +300,11 @@ export function EventFormScreen() {
         </div>
         <Button
           onClick={() => {
-            if (title.trim().length < 2) return;
             const [hh, mm] = time.split(":").map(Number);
             const start = new Date(Date.UTC(2026, 10, Number(date.slice(8)), (hh || 9) + 5, mm || 0)).toISOString();
             const event: EstateEvent = {
               id: uid("ev"),
-              title: title.trim(),
+              title: title.trim() || "Event",
               detail: detail.trim() || "Added from the calendar.",
               propertyId,
               location: location || "On property",
