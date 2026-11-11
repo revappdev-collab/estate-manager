@@ -346,7 +346,7 @@ export function createSeed(): Data {
           { id: "c17", label: "Confirm the chirp has stopped", done: false },
         ],
         comments: [],
-        photos: ["vendor-security"],
+        photos: ["vendor-security", "property-1", "maint-before-2"],
         history: [
           { id: "h10", at: at(-1, 21, 10), actorId: "eleanor", text: "Reported from the house." },
           { id: "h11", at: at(0, 8, 0), actorId: "james", text: "Acknowledged and assigned to Thomas Hale." },
