@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Avatar,
   Banner,
@@ -22,8 +22,9 @@ import {
   usePhase,
 } from "@/components/ios/ui";
 import { haptic } from "@/lib/haptic";
-import { dayLabel, fullName, uid, usDateTime } from "@/lib/format";
+import { dayLabel, fullName, todayKey, uid, usDate, usDateTime } from "@/lib/format";
 import type { Priority, Task } from "@/mock/types";
+import { cn } from "@/lib/utils";
 import { useEstate } from "../useEstate";
 import { useGo } from "@/components/ios/ui";
 
@@ -112,95 +113,257 @@ export function TaskListScreen() {
   );
 }
 
+const TASK_STEPS = ["What", "Where", "Who", "Review"] as const;
+const CATEGORIES = ["Household", "Maintenance", "Grounds", "Kitchen", "Guest ready", "Safety"];
+const ROOMS = ["General", "Kitchen", "Library", "Guest suite", "Pool", "Grounds"];
+const CHECK_IDEAS = ["Confirm access", "Photograph the result", "Tell the family when done"];
+
+function shiftDay(key: string, days: number) {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+}
+
+function Choice({ on, children, onClick }: { on: boolean; children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={cn("min-h-11 rounded-full px-4 text-[15px] font-semibold", on ? "bg-navy text-white dark:bg-gold dark:text-navy" : "bg-surface")}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function TaskCreateScreen() {
-  const { data, me, dispatch, pushToast } = useEstate();
+  const { data, me, dispatch, pushToast, name, property } = useEstate();
   const go = useGo();
+  const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Household");
   const [priority, setPriority] = useState<Priority>("medium");
   const [propertyId, setPropertyId] = useState(me?.propertyIds[0] ?? "main");
-  const [room, setRoom] = useState("");
+  const [room, setRoom] = useState("General");
   const [assignees, setAssignees] = useState<string[]>([]);
-  const [due, setDue] = useState("2026-11-13");
-  const [checks, setChecks] = useState("Confirm access, Photograph the result");
-  const [error, setError] = useState("");
+  const today = todayKey();
+  const [due, setDue] = useState(shiftDay(today, 1));
+  const [checks, setChecks] = useState<string[]>(["Confirm access", "Photograph the result"]);
+  const [draft, setDraft] = useState("");
   if (!me) return null;
+
+  const houses = data.properties.filter((p) => me.propertyIds.includes(p.id));
   const staff = data.people.filter((p) => p.role === "staff" && !p.revoked && p.propertyIds.includes(propertyId));
+  const dueChoices = [
+    { label: "Today", value: today },
+    { label: "Tomorrow", value: shiftDay(today, 1) },
+    { label: "In 3 days", value: shiftDay(today, 3) },
+  ];
+  const canNext = step === 0 ? title.trim().length > 0 : step === 2 ? assignees.length > 0 : true;
+
+  const assign = () => {
+    const id = uid("task");
+    const task: Task = {
+      id,
+      title: title.trim(),
+      description: description.trim() || "Created from the house iPhone.",
+      category,
+      priority,
+      propertyId,
+      room: room || "General",
+      assigneeIds: assignees,
+      progress: assignees.map((personId) => ({ personId, status: "new", at: new Date().toISOString() })),
+      due: new Date(`${due}T21:00:00.000Z`).toISOString(),
+      start: new Date().toISOString(),
+      checklist: checks.map((label) => ({ id: uid("c"), label, done: false })),
+      comments: [],
+      photos: [],
+      history: [{ id: uid("h"), at: new Date().toISOString(), actorId: me.id, text: "Task created." }],
+      createdBy: me.id,
+    };
+    dispatch({ type: "create-task", task, actorId: me.id });
+    haptic("success");
+    pushToast("Task assigned", "Each person will acknowledge their own part.");
+    go(`/app/tasks/${id}`);
+  };
+
   return (
-    <Page back title="New task">
-      <div className="space-y-3">
-        <Field label="Title" value={title} onChange={setTitle} error={error || undefined} />
-        <Field label="Description" value={description} onChange={setDescription} />
-        <Field label="Category" value={category} onChange={setCategory} />
-        <Field label="Room or asset" value={room} onChange={setRoom} />
-        <label className="block text-[13px] text-soft">Property
-          <select aria-label="Property" value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="mt-1 h-12 w-full rounded-[14px] border border-line bg-surface px-3 text-[17px]">
-            {data.properties.filter((p) => me.propertyIds.includes(p.id)).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </label>
-        <label className="block text-[13px] text-soft">Priority
-          <select aria-label="Priority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className="mt-1 h-12 w-full rounded-[14px] border border-line bg-surface px-3 text-[17px]">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="urgent">Urgent</option>
-          </select>
-        </label>
-        <label className="block text-[13px] text-soft">Due
-          <input aria-label="Due date" type="date" value={due} onChange={(e) => setDue(e.target.value)} className="mt-1 h-12 w-full rounded-[14px] border border-line bg-surface px-3 text-[17px]" />
-        </label>
-        <p className="text-[15px] font-semibold">Assignees</p>
-        <div className="space-y-2">
+    <Page
+      back
+      title={TASK_STEPS[step]}
+      subtitle={`New task · ${step + 1} of ${TASK_STEPS.length}`}
+      onBack={() => (step === 0 ? go("/app/tasks") : setStep((n) => n - 1))}
+    >
+      <div className="mb-4 flex gap-1.5" aria-label="Progress">
+        {TASK_STEPS.map((label, i) => (
+          <span key={label} className={cn("h-1 flex-1 rounded-full", i <= step ? "bg-gold" : "bg-fill")} />
+        ))}
+      </div>
+
+      {step === 0 && (
+        <div className="space-y-4">
+          <Field label="What needs doing?" value={title} onChange={setTitle} />
+          <Field label="Details" value={description} onChange={setDescription} helper="Optional. A sentence is enough." />
+          <div>
+            <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-soft">Category</p>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((item) => (
+                <Choice key={item} on={category === item} onClick={() => setCategory(item)}>{item}</Choice>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-soft">Priority</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(["low", "medium", "high", "urgent"] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={priority === item}
+                  onClick={() => setPriority(item)}
+                  className={cn("min-h-14 rounded-[16px] text-[17px] font-semibold capitalize", priority === item ? "bg-navy text-white dark:bg-gold dark:text-navy" : "bg-surface")}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 1 && (
+        <div className="space-y-4">
+          <p className="text-[15px] text-soft">Choose the house, then the room.</p>
+          <div className="space-y-2">
+            {houses.map((p) => {
+              const on = propertyId === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    setPropertyId(p.id);
+                    setAssignees([]);
+                  }}
+                  className={cn("flex min-h-16 w-full items-center gap-3 rounded-[16px] px-3 text-left", on ? "bg-navy text-white dark:bg-gold dark:text-navy" : "bg-surface")}
+                >
+                  <Photo name={p.image} alt="" className="h-12 w-12 rounded-[12px]" />
+                  <span className="min-w-0">
+                    <span className="block text-[17px] font-semibold">{p.name}</span>
+                    <span className={cn("block text-[13px]", on ? "text-white/75 dark:text-navy/70" : "text-soft")}>{p.city}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div>
+            <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-soft">Room</p>
+            <div className="flex flex-wrap gap-2">
+              {ROOMS.map((item) => (
+                <Choice key={item} on={room === item} onClick={() => setRoom(item)}>{item}</Choice>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="space-y-3">
+          <p className="text-[15px] text-soft">The task stays open until every person finishes, or you close it.</p>
+          {staff.length === 0 && <p className="rounded-[16px] bg-surface px-4 py-4 text-[15px]">No staff are assigned to this house yet.</p>}
           {staff.map((p) => {
             const on = assignees.includes(p.id);
             const avail = data.availability.find((a) => a.personId === p.id && a.date === due);
             return (
-              <button key={p.id} aria-pressed={on} onClick={() => setAssignees((list) => on ? list.filter((id) => id !== p.id) : [...list, p.id])} className="flex min-h-14 w-full items-center gap-3 rounded-[16px] bg-surface px-3 text-left">
+              <button
+                key={p.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setAssignees((list) => (on ? list.filter((id) => id !== p.id) : [...list, p.id]))}
+                className={cn("flex min-h-16 w-full items-center gap-3 rounded-[16px] px-3 text-left", on ? "bg-navy text-white dark:bg-gold dark:text-navy" : "bg-surface")}
+              >
                 <Avatar name={fullName(p)} src={p.avatar} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[17px]">{fullName(p)}</span>
-                  <span className="block text-[13px] text-soft">{avail ? `${avail.state} · ${avail.note}` : "No block on that day"}</span>
+                  <span className="block text-[17px] font-semibold">{fullName(p)}</span>
+                  <span className={cn("block text-[13px]", on ? "text-white/75 dark:text-navy/70" : "text-soft")}>{p.title}{avail ? ` · ${avail.state}` : ""}</span>
                 </span>
-                <span className="text-[15px] text-gold-text">{on ? "Added" : "Add"}</span>
+                <span className="text-[15px] font-semibold">{on ? "Added" : "Add"}</span>
               </button>
             );
           })}
         </div>
-        <Field label="Checklist, comma separated" value={checks} onChange={setChecks} />
-        <Button
-          onClick={() => {
-            if (title.trim().length < 3 || assignees.length === 0) {
-              setError("Add a title and at least one assignee.");
-              return;
-            }
-            const id = uid("task");
-            const task: Task = {
-              id,
-              title: title.trim(),
-              description: description.trim() || "Created from the house iPhone.",
-              category,
-              priority,
-              propertyId,
-              room: room || "General",
-              assigneeIds: assignees,
-              progress: assignees.map((personId) => ({ personId, status: "new", at: new Date().toISOString() })),
-              due: new Date(`${due}T21:00:00.000Z`).toISOString(),
-              start: new Date().toISOString(),
-              checklist: checks.split(",").map((label) => label.trim()).filter(Boolean).map((label) => ({ id: uid("c"), label, done: false })),
-              comments: [],
-              photos: [],
-              history: [{ id: uid("h"), at: new Date().toISOString(), actorId: me.id, text: "Task created." }],
-              createdBy: me.id,
-            };
-            dispatch({ type: "create-task", task, actorId: me.id });
-            haptic("success");
-            pushToast("Task assigned", "Each person will acknowledge their own part.");
-            go(`/app/tasks/${id}`);
-          }}
-        >
-          Assign task
-        </Button>
+      )}
+
+      {step === 3 && (
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-soft">Due</p>
+            <div className="flex flex-wrap gap-2">
+              {dueChoices.map((item) => (
+                <Choice key={item.label} on={due === item.value} onClick={() => setDue(item.value)}>{item.label}</Choice>
+              ))}
+            </div>
+            <label className="mt-3 block text-[13px] text-soft">
+              Or pick a date
+              <input aria-label="Due date" type="date" value={due} onChange={(e) => setDue(e.target.value)} className="mt-1 h-12 w-full rounded-[14px] border border-line bg-surface px-3 text-[17px] text-ink" />
+            </label>
+          </div>
+          <div>
+            <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-soft">Checklist</p>
+            <div className="flex flex-wrap gap-2">
+              {CHECK_IDEAS.map((item) => (
+                <Choice
+                  key={item}
+                  on={checks.includes(item)}
+                  onClick={() => setChecks((list) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]))}
+                >
+                  {item}
+                </Choice>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <div className="min-w-0 flex-1">
+                <Field label="Add a step" value={draft} onChange={setDraft} />
+              </div>
+              <button
+                type="button"
+                className="mt-3 h-12 shrink-0 rounded-[14px] bg-navy px-4 text-[15px] font-semibold text-white dark:bg-gold dark:text-navy"
+                onClick={() => {
+                  const next = draft.trim();
+                  if (!next) return;
+                  setChecks((list) => (list.includes(next) ? list : [...list, next]));
+                  setDraft("");
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+          <Group>
+            <Row title={title.trim() || "Untitled"} subtitle={`${category} · ${priority}`} />
+            <Row title={property(propertyId)?.name ?? "House"} subtitle={room} />
+            <Row title={assignees.length ? assignees.map((id) => name(id).split(" ")[0]).join(", ") : "No one yet"} subtitle={`Due ${usDate(`${due}T16:00:00.000Z`)}`} />
+            <Row title={checks.length ? `${checks.length} checklist steps` : "No checklist"} subtitle={checks.slice(0, 2).join(" · ")} />
+          </Group>
+        </div>
+      )}
+
+      <div className="mt-6">
+        {step < 3 ? (
+          <>
+            <Button disabled={!canNext} onClick={() => canNext && setStep((n) => n + 1)}>
+              Continue
+            </Button>
+            {!canNext && <p className="mt-2 text-center text-[13px] text-soft">{step === 0 ? "Add a short title to continue." : "Choose at least one person."}</p>}
+          </>
+        ) : (
+          <Button disabled={!title.trim() || assignees.length === 0} onClick={assign}>
+            Assign task
+          </Button>
+        )}
       </div>
     </Page>
   );

@@ -10,11 +10,12 @@ import { createPortal } from "react-dom";
 import { useEffect, useState, useCallback, type ButtonHTMLAttributes, type ReactNode } from "react";
 import logo from "@/img/logo.png";
 import { useOverlay } from "@/components/AppShell";
+import { fullName } from "@/lib/format";
 import { haptic } from "@/lib/haptic";
 import { media, mediaSet } from "@/lib/media";
 import { useApp } from "@/lib/store";
 import type { Priority, TaskStatus } from "@/mock/types";
-import { cn } from "@/lib/utils";
+import { asset, cn } from "@/lib/utils";
 
 export function useGo() {
   const router = useRouter();
@@ -546,6 +547,7 @@ export function Page({
   large,
   back,
   trailing,
+  onBack,
   children,
 }: {
   title?: ReactNode;
@@ -553,11 +555,17 @@ export function Page({
   large?: boolean;
   back?: boolean;
   trailing?: ReactNode;
+  onBack?: () => void;
   children: ReactNode;
 }) {
   const router = useRouter();
   const go = useGo();
+  const { user } = useApp();
   const leave = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     const state = window.history.state as { idx?: number; __TSR_index?: number } | null;
     const idx = state?.__TSR_index ?? state?.idx;
     if (typeof idx === "number" ? idx > 0 : window.history.length > 1) router.history.back();
@@ -565,33 +573,37 @@ export function Page({
   };
   return (
     <div className="pb-8">
-      <header className="sticky top-0 z-20 bg-bg/88 px-4 backdrop-blur-xl pt-[max(8px,env(safe-area-inset-top))]">
-        <div className="flex h-12 items-center gap-1">
-          {back ? (
-            <IconButton label="Back" onClick={leave}>
-              <ChevronLeft />
-            </IconButton>
-          ) : (
-            <Logo className="h-8" />
-          )}
-          {!large && title && <h1 className="min-w-0 flex-1 truncate px-1 text-center text-[17px] font-semibold">{title}</h1>}
-          {large && <span className="flex-1" />}
-          {back && !trailing ? (
-            <button className="min-h-11 shrink-0 px-1 text-[15px] font-semibold text-gold-text" onClick={() => go("/app")}>
-              Home
+      <header className="sticky top-0 z-20 border-b border-line/80 bg-bg/92 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+        {back ? (
+          <div className="relative flex h-11 items-center">
+            <button onClick={leave} className="relative z-10 flex h-11 items-center gap-0.5 pl-1 pr-3 text-[17px] text-gold-text">
+              <ChevronLeft size={28} strokeWidth={2.25} />
+              Back
             </button>
-          ) : (
-            (trailing ?? <span className="w-11" />)
-          )}
-        </div>
+            {title && <h1 className="pointer-events-none absolute inset-x-20 truncate text-center text-[17px] font-semibold">{title}</h1>}
+            <div className="ml-auto flex h-11 min-w-11 items-center justify-end pr-3">{trailing}</div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 px-4 py-2.5">
+            <img src={asset("/apple-touch-icon.png")} alt="" className="h-11 w-11 rounded-[14px] object-cover ring-1 ring-line" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold tracking-[0.16em] text-gold-text uppercase">Hawthorne</p>
+              {title && <h1 className="truncate text-[22px] font-semibold leading-tight">{title}</h1>}
+              {subtitle && <p className="truncate text-[14px] text-soft">{subtitle}</p>}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              {trailing}
+              {user && (
+                <button aria-label="Profile" onClick={() => go("/app/profile")} className="rounded-full">
+                  <Avatar name={fullName(user)} src={user.avatar} size={40} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        {back && subtitle && <p className="-mt-1 px-4 pb-2 text-center text-[13px] text-soft">{subtitle}</p>}
       </header>
-      {large && title && (
-        <div className="px-4 pb-2">
-          <h1 className="text-[34px] font-bold leading-[1.12]">{title}</h1>
-          {subtitle && <p className="mt-1 text-[15px] text-soft">{subtitle}</p>}
-        </div>
-      )}
-      <div className="px-4">{children}</div>
+      <div className={cn("px-4", !back && "pt-4", back && subtitle && "pt-3", back && !subtitle && "pt-4")}>{children}</div>
     </div>
   );
 }
