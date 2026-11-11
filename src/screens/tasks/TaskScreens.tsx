@@ -13,11 +13,9 @@ import {
   Row,
   SearchField,
   Section,
-  Segmented,
   Sheet,
   SkeletonList,
   StatusChip,
-  SwipeRow,
   Timeline,
   usePhase,
 } from "@/components/ios/ui";
@@ -30,85 +28,134 @@ import { useGo } from "@/components/ios/ui";
 
 type Filter = "all" | "mine" | "overdue" | "blocked" | "review";
 
+const PRIORITY_BAR: Record<Priority, string> = {
+  low: "bg-fill",
+  medium: "bg-info",
+  high: "bg-warning",
+  urgent: "bg-danger",
+};
+
 export function TaskListScreen() {
-  const { data, me, taskStatus, property } = useEstate();
+  const { data, me, taskStatus, property, person } = useEstate();
   const go = useGo();
   const phase = usePhase();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>(me?.role === "staff" ? "mine" : "all");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [priority, setPriority] = useState<Priority | "any">("any");
   if (!me) return null;
   const staff = me.role === "staff";
-  let tasks = data.tasks.filter((t) => me.propertyIds.includes(t.propertyId));
-  if (staff) tasks = tasks.filter((t) => t.assigneeIds.includes(me.id) && (filter !== "all" || t.assigneeIds.length > 1));
-  if (!staff && filter === "mine") tasks = tasks.filter((t) => t.assigneeIds.includes(me.id));
-  if (filter === "overdue") tasks = tasks.filter((t) => taskStatus(t) === "overdue");
-  if (filter === "blocked") tasks = tasks.filter((t) => taskStatus(t) === "blocked");
-  if (filter === "review") tasks = tasks.filter((t) => t.reviewRequested || (taskStatus(t) === "completed" && !t.closed));
+  const scoped = data.tasks.filter((t) => me.propertyIds.includes(t.propertyId) && (!staff || t.assigneeIds.includes(me.id)));
+  const count = (kind: Filter) =>
+    scoped.filter((t) => {
+      if (kind === "mine") return t.assigneeIds.includes(me.id);
+      if (kind === "all") return staff ? t.assigneeIds.length > 1 : true;
+      if (kind === "overdue") return taskStatus(t) === "overdue";
+      if (kind === "blocked") return taskStatus(t) === "blocked";
+      return Boolean(t.reviewRequested || (taskStatus(t) === "completed" && !t.closed));
+    }).length;
+  const groups: { value: Filter; label: string }[] = staff
+    ? [
+        { value: "mine", label: "Mine" },
+        { value: "all", label: "Shared" },
+        { value: "overdue", label: "Overdue" },
+        { value: "blocked", label: "Blocked" },
+      ]
+    : [
+        { value: "all", label: "All" },
+        { value: "mine", label: "Mine" },
+        { value: "overdue", label: "Overdue" },
+        { value: "blocked", label: "Blocked" },
+        { value: "review", label: "Review" },
+      ];
+  let tasks = scoped.filter((t) => {
+    if (staff && filter === "all") return t.assigneeIds.length > 1;
+    if (!staff && filter === "mine") return t.assigneeIds.includes(me.id);
+    if (filter === "overdue") return taskStatus(t) === "overdue";
+    if (filter === "blocked") return taskStatus(t) === "blocked";
+    if (filter === "review") return Boolean(t.reviewRequested || (taskStatus(t) === "completed" && !t.closed));
+    return true;
+  });
   if (priority !== "any") tasks = tasks.filter((t) => t.priority === priority);
-  if (q.trim()) tasks = tasks.filter((t) => `${t.title} ${t.room}`.toLowerCase().includes(q.toLowerCase()));
+  if (q.trim()) tasks = tasks.filter((t) => `${t.title} ${t.room} ${property(t.propertyId)?.name ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+  const open = scoped.filter((t) => !t.closed && taskStatus(t) !== "completed").length;
+  const overdue = scoped.filter((t) => taskStatus(t) === "overdue").length;
 
   return (
-    <Page large title={staff ? "My Tasks" : "Tasks"} subtitle="Hawthorne Estate" trailing={<button className="min-h-11 px-2 text-[17px] text-gold-text" onClick={() => setFiltersOpen(true)}>Filter</button>}>
-      <SearchField value={q} onChange={setQ} placeholder="Search tasks" />
-      <div className="mt-3">
-        <Segmented
-          label="Task groups"
-          value={filter}
-          onChange={setFilter}
-          options={staff
-            ? [
-                { value: "mine", label: "Mine" },
-                { value: "all", label: "Shared" },
-                { value: "overdue", label: "Overdue" },
-                { value: "blocked", label: "Blocked" },
-              ]
-            : [
-                { value: "all", label: "All" },
-                { value: "mine", label: "Mine" },
-                { value: "overdue", label: "Overdue" },
-                { value: "blocked", label: "Blocked" },
-                { value: "review", label: "Review" },
-              ]}
-        />
+    <Page large title={staff ? "My Tasks" : "Tasks"} subtitle={staff ? "Work assigned to you" : `${open} open · ${overdue} overdue`}>
+      <SearchField value={q} onChange={setQ} placeholder="Search title, room, or house" />
+      <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
+        {groups.map((item) => {
+          const on = filter === item.value;
+          return (
+            <button
+              key={item.value}
+              aria-pressed={on}
+              onClick={() => setFilter(item.value)}
+              className={cn("inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold", on ? "bg-navy text-white dark:bg-gold dark:text-navy" : "bg-surface ring-1 ring-line")}
+            >
+              {item.label}
+              <span className={cn("tabular", on ? "text-white/70 dark:text-navy/70" : "text-soft")}>{count(item.value)}</span>
+            </button>
+          );
+        })}
       </div>
-      <div className="mt-4">
+      <div className="mt-2 flex flex-wrap gap-2">
+        {(["any", "low", "medium", "high", "urgent"] as const).map((item) => (
+          <button
+            key={item}
+            aria-pressed={priority === item}
+            onClick={() => setPriority(item)}
+            className={cn("h-8 rounded-full px-3 text-[13px] font-semibold capitalize", priority === item ? "bg-gold-soft text-gold-text" : "text-soft")}
+          >
+            {item === "any" ? "Any priority" : item}
+          </button>
+        ))}
+      </div>
+      <div className="mt-4 space-y-3">
         {phase.phase === "loading" && <SkeletonList />}
         {phase.phase === "error" && <ErrorState onRetry={phase.retry} />}
         {phase.phase === "ready" && tasks.length === 0 && (
           <EmptyState image="empty-tasks" title="Nothing in this view" body="Try another filter, or create the next piece of work." action={me.role === "manager" ? <Button onClick={() => go("/app/tasks/new")}>New task</Button> : undefined} />
         )}
         {phase.phase === "ready" &&
-          tasks.map((t) => (
-            <SwipeRow
-              key={t.id}
-              label={staff ? "Open" : "Review"}
-              onAction={() => go(`/app/tasks/${t.id}`)}
-            >
-              <button onClick={() => go(`/app/tasks/${t.id}`)} className="block w-full rounded-[16px] bg-surface p-4 text-left">
-                <span className="flex items-start justify-between gap-2">
-                  <span className="text-[17px] font-semibold">{t.title}</span>
-                  <StatusChip status={taskStatus(t)} />
-                </span>
-                <span className="mt-1 block text-[15px] text-soft">{property(t.propertyId)?.name} · {t.room}</span>
-                <span className="mt-2 flex items-center justify-between">
-                  <PriorityChip priority={t.priority} />
-                  <span className="text-[13px] text-soft tabular">Due {dayLabel(t.due)}</span>
+          tasks.map((t) => {
+            const status = taskStatus(t);
+            const people = t.assigneeIds.map((id) => person(id)).filter(Boolean);
+            return (
+              <button
+                key={t.id}
+                onClick={() => go(`/app/tasks/${t.id}`)}
+                className="flex w-full overflow-hidden rounded-[16px] bg-surface text-left ring-1 ring-line"
+              >
+                <span className={cn("w-1 shrink-0", PRIORITY_BAR[t.priority])} />
+                <span className="min-w-0 flex-1 px-3.5 py-3">
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="text-[17px] font-semibold leading-snug">{t.title}</span>
+                    <StatusChip status={status} />
+                  </span>
+                  <span className="mt-1 block truncate text-[14px] text-soft">
+                    {property(t.propertyId)?.name} · {t.room}
+                  </span>
+                  <span className="mt-3 flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="flex -space-x-2">
+                        {people.slice(0, 3).map((p) => (
+                          <span key={p!.id} className="rounded-full ring-2 ring-surface">
+                            <Avatar name={fullName(p!)} src={p!.avatar} size={24} />
+                          </span>
+                        ))}
+                      </span>
+                      <PriorityChip priority={t.priority} />
+                    </span>
+                    <span className={cn("shrink-0 text-[13px] font-semibold tabular", status === "overdue" ? "text-danger" : "text-soft")}>
+                      {status === "overdue" ? "Overdue" : `Due ${dayLabel(t.due)}`}
+                    </span>
+                  </span>
                 </span>
               </button>
-            </SwipeRow>
-          ))}
+            );
+          })}
       </div>
-      <Sheet open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
-        <p className="mb-2 text-[15px] text-soft">Priority</p>
-        <div className="flex flex-wrap gap-2">
-          {(["any", "low", "medium", "high", "urgent"] as const).map((p) => (
-            <button key={p} onClick={() => setPriority(p)} className="min-h-11 rounded-full bg-fill px-4 text-[15px] capitalize">{p}</button>
-          ))}
-        </div>
-        <div className="mt-4"><Button onClick={() => setFiltersOpen(false)}>Show tasks</Button></div>
-      </Sheet>
     </Page>
   );
 }

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { Bell, BookOpen, Building2, CalendarClock, Camera, ClipboardList, CloudSun, FileText, KeyRound, type LucideIcon, MessageCircle, Package, ScrollText, Search, Shield, ShoppingBag, Siren, Store, Users, Wine, Wrench } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Avatar, Button, EmptyState, ErrorState, Field, Group, Page, Row, SearchField, Section, Segmented, Sheet, SkeletonList, Switch, useGo, usePhase } from "@/components/ios/ui";
 import { dayKey, dayLabel, ESTATE_MONTH, ESTATE_YEAR, fullName, monthMatrix, todayKey, uid, usDate, usTime } from "@/lib/format";
 import { haptic } from "@/lib/haptic";
@@ -323,72 +324,129 @@ export function EventFormScreen() {
   );
 }
 
-const MORE: Record<string, { label: string; href: string; note?: string }[]> = {
-  manager: [
-    { label: "Estates & properties", href: "/app/properties" },
-    { label: "Issue inbox", href: "/app/issues" },
-    { label: "Approvals", href: "/app/approvals" },
-    { label: "Maintenance", href: "/app/maintenance" },
-    { label: "Inventory", href: "/app/inventory" },
-    { label: "Cellar", href: "/app/cellar" },
-    { label: "Shopping lists", href: "/app/shopping" },
-    { label: "Documents", href: "/app/documents" },
-    { label: "Vendor log", href: "/app/vendors" },
-    { label: "Staff & team", href: "/app/team" },
-    { label: "SOPs & checklists", href: "/app/sops" },
-    { label: "House manual", href: "/app/manual" },
-    { label: "Safety & emergency", href: "/app/safety" },
-    { label: "Reports", href: "/app/reports" },
-    { label: "Broadcast alert", href: "/app/alerts/new" },
-    { label: "Weather", href: "/app/weather" },
-    { label: "Audit history", href: "/app/audit" },
-    { label: "Users & access", href: "/app/users" },
-    { label: "Search", href: "/app/search" },
-    { label: "Profile & settings", href: "/app/profile" },
-  ],
-  staff: [
-    { label: "Report an issue", href: "/app/report-issue" },
-    { label: "My availability", href: "/app/availability" },
-    { label: "SOPs to acknowledge", href: "/app/sops" },
-    { label: "Shopping assignments", href: "/app/shopping" },
-    { label: "Inventory", href: "/app/inventory" },
-    { label: "Vendor log", href: "/app/vendors", note: "Read only" },
-    { label: "Documents", href: "/app/documents" },
-    { label: "House manual", href: "/app/manual" },
-    { label: "Safety", href: "/app/safety" },
-    { label: "Messages", href: "/app/messages" },
-    { label: "Notifications", href: "/app/inbox" },
-    { label: "Profile", href: "/app/profile" },
-  ],
-  owner: [
-    { label: "Properties", href: "/app/properties" },
-    { label: "Shopping lists", href: "/app/shopping" },
-    { label: "Household alert", href: "/app/alerts/new" },
-    { label: "Documents", href: "/app/documents" },
-    { label: "Notification history", href: "/app/inbox" },
-    { label: "Search", href: "/app/search" },
-    { label: "Profile", href: "/app/profile" },
-  ],
-};
+function MenuIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-navy text-gold dark:bg-gold dark:text-navy">
+      <Icon size={16} strokeWidth={2.25} />
+    </span>
+  );
+}
+
+function MenuSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="mt-6">
+      <h2 className="mb-2 px-1 text-[13px] font-semibold tracking-wide text-soft uppercase">{title}</h2>
+      <Group>{children}</Group>
+    </section>
+  );
+}
 
 export function MoreScreen() {
-  const { me } = useEstate();
+  const { me, data, logout } = useEstate();
   const go = useGo();
   if (!me) return null;
-  const items = MORE[me.role];
+  const pending = data.approvals.filter((a) => a.status === "pending").length;
+  const issues = data.issues.filter((i) => i.status === "new" && me.propertyIds.includes(i.propertyId)).length;
+  const count = (n: number) => (n > 0 ? <span className="text-[15px] font-semibold text-gold-text tabular">{n}</span> : undefined);
+
   return (
-    <Page large title="More" subtitle={roleLabel(me.role)}>
-      <Group>
-        {items.map((item) => (
-          <Row key={item.href + item.label} title={item.label} subtitle={item.note} onClick={() => go(item.href)} />
-        ))}
-      </Group>
+    <Page large title="More" subtitle="Hawthorne Estate">
+      <button onClick={() => go("/app/profile")} className="flex w-full items-center gap-3 rounded-[16px] bg-surface p-4 text-left ring-1 ring-line">
+        <Avatar name={fullName(me)} src={me.avatar} size={56} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[20px] font-semibold">{fullName(me)}</span>
+          <span className="block text-[15px] text-gold-text">{roleLabel(me.role)}</span>
+          <span className="block truncate text-[14px] text-soft">{me.email}</span>
+        </span>
+      </button>
+      <button onClick={() => go("/app/search")} className="mt-3 flex h-11 w-full items-center gap-2 rounded-[12px] bg-fill px-3 text-left text-[17px] text-soft">
+        <Search size={18} />
+        Search the estate
+      </button>
+
+      {me.role === "manager" && (
+        <>
+          <MenuSection title="House">
+            <Row leading={<MenuIcon icon={Building2} />} title="Properties" subtitle="Houses on the estate" onClick={() => go("/app/properties")} />
+            <Row leading={<MenuIcon icon={ClipboardList} />} title="Issue inbox" subtitle="New photo reports" trailing={count(issues)} onClick={() => go("/app/issues")} />
+            <Row leading={<MenuIcon icon={Wrench} />} title="Maintenance" subtitle="Work orders" onClick={() => go("/app/maintenance")} />
+            <Row leading={<MenuIcon icon={Package} />} title="Inventory" subtitle="Stock and low items" onClick={() => go("/app/inventory")} />
+            <Row leading={<MenuIcon icon={Wine} />} title="Cellar" onClick={() => go("/app/cellar")} />
+            <Row leading={<MenuIcon icon={ShoppingBag} />} title="Shopping" onClick={() => go("/app/shopping")} />
+          </MenuSection>
+          <MenuSection title="People">
+            <Row leading={<MenuIcon icon={Users} />} title="Staff and team" onClick={() => go("/app/team")} />
+            <Row leading={<MenuIcon icon={KeyRound} />} title="Users and access" onClick={() => go("/app/users")} />
+            <Row leading={<MenuIcon icon={ScrollText} />} title="Approvals" trailing={count(pending)} onClick={() => go("/app/approvals")} />
+            <Row leading={<MenuIcon icon={Store} />} title="Vendors" onClick={() => go("/app/vendors")} />
+          </MenuSection>
+          <MenuSection title="Records">
+            <Row leading={<MenuIcon icon={FileText} />} title="Documents" onClick={() => go("/app/documents")} />
+            <Row leading={<MenuIcon icon={BookOpen} />} title="SOPs and checklists" onClick={() => go("/app/sops")} />
+            <Row leading={<MenuIcon icon={BookOpen} />} title="House manual" onClick={() => go("/app/manual")} />
+            <Row leading={<MenuIcon icon={Shield} />} title="Safety and emergency" onClick={() => go("/app/safety")} />
+            <Row leading={<MenuIcon icon={ClipboardList} />} title="Reports" onClick={() => go("/app/reports")} />
+            <Row leading={<MenuIcon icon={Siren} />} title="Broadcast alert" onClick={() => go("/app/alerts/new")} />
+            <Row leading={<MenuIcon icon={CloudSun} />} title="Weather" onClick={() => go("/app/weather")} />
+            <Row leading={<MenuIcon icon={ScrollText} />} title="Audit history" onClick={() => go("/app/audit")} />
+          </MenuSection>
+        </>
+      )}
+
+      {me.role === "staff" && (
+        <>
+          <MenuSection title="Today’s work">
+            <Row leading={<MenuIcon icon={Camera} />} title="Report an issue" subtitle="Photo and a short note" onClick={() => go("/app/report-issue")} />
+            <Row leading={<MenuIcon icon={CalendarClock} />} title="My availability" onClick={() => go("/app/availability")} />
+            <Row leading={<MenuIcon icon={ShoppingBag} />} title="Shopping assignments" onClick={() => go("/app/shopping")} />
+            <Row leading={<MenuIcon icon={Package} />} title="Inventory" onClick={() => go("/app/inventory")} />
+          </MenuSection>
+          <MenuSection title="Reference">
+            <Row leading={<MenuIcon icon={BookOpen} />} title="SOPs to acknowledge" onClick={() => go("/app/sops")} />
+            <Row leading={<MenuIcon icon={FileText} />} title="Documents" onClick={() => go("/app/documents")} />
+            <Row leading={<MenuIcon icon={BookOpen} />} title="House manual" onClick={() => go("/app/manual")} />
+            <Row leading={<MenuIcon icon={Shield} />} title="Safety" onClick={() => go("/app/safety")} />
+            <Row leading={<MenuIcon icon={Store} />} title="Vendor log" subtitle="Read only" onClick={() => go("/app/vendors")} />
+          </MenuSection>
+          <MenuSection title="Messages">
+            <Row leading={<MenuIcon icon={MessageCircle} />} title="Messages" onClick={() => go("/app/messages")} />
+            <Row leading={<MenuIcon icon={Bell} />} title="Notifications" onClick={() => go("/app/inbox")} />
+          </MenuSection>
+        </>
+      )}
+
+      {me.role === "owner" && (
+        <>
+          <MenuSection title="Your houses">
+            <Row leading={<MenuIcon icon={Building2} />} title="Properties" onClick={() => go("/app/properties")} />
+            <Row leading={<MenuIcon icon={ShoppingBag} />} title="Shopping lists" onClick={() => go("/app/shopping")} />
+            <Row leading={<MenuIcon icon={FileText} />} title="Documents" onClick={() => go("/app/documents")} />
+            <Row leading={<MenuIcon icon={Siren} />} title="Household alert" onClick={() => go("/app/alerts/new")} />
+          </MenuSection>
+          <MenuSection title="Updates">
+            <Row leading={<MenuIcon icon={Bell} />} title="Notification history" onClick={() => go("/app/inbox")} />
+          </MenuSection>
+        </>
+      )}
+
+      <MenuSection title="Account">
+        <Row leading={<MenuIcon icon={Users} />} title="Profile and settings" onClick={() => go("/app/profile")} />
+        <button
+          onClick={() => {
+            logout();
+            go("/sign-in");
+          }}
+          className="flex min-h-14 w-full items-center justify-center text-[17px] font-semibold text-danger"
+        >
+          Sign out
+        </button>
+      </MenuSection>
     </Page>
   );
 }
 
 export function ProfileScreen() {
-  const { me, data, session, logout, setTheme, toggleNotif, toggleFace, setTimezone, dispatch } = useEstate();
+  const { me, data, session, logout, setTheme, toggleNotif, setTimezone, dispatch } = useEstate();
   const go = useGo();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [help, setHelp] = useState(false);
@@ -409,14 +467,6 @@ export function ProfileScreen() {
       </Section>
       <Section title="Appearance">
         <Segmented label="Theme" value={session.theme} onChange={setTheme} options={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }, { value: "system", label: "System" }]} />
-      </Section>
-      <Section title="Security">
-        <Group>
-          <div className="flex min-h-14 items-center justify-between px-4">
-            <span className="text-[17px]">Face ID</span>
-            <Switch checked={session.faceId} label="Face ID" onChange={() => toggleFace()} />
-          </div>
-        </Group>
       </Section>
       <Section title="Notifications">
         <Group>

@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Fingerprint } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button, Field, Hero, IconButton, Logo, Sheet, useGo } from "@/components/ios/ui";
 import { haptic } from "@/lib/haptic";
@@ -160,7 +160,6 @@ export function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
-  const [face, setFace] = useState(false);
 
   const submit = (nextEmail = email, nextPassword = password) => {
     const result = login(nextEmail, nextPassword);
@@ -189,19 +188,6 @@ export function SignInScreen() {
             </IconButton>
           </div>
           <Button onClick={() => submit()}>Sign In</Button>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setFace(true);
-              window.setTimeout(() => {
-                setFace(false);
-                haptic("success");
-                submit("james.carter@hawthorne.estate", DEMO_PASSWORD);
-              }, 700);
-            }}
-          >
-            <Fingerprint size={18} /> {face ? "Checking Face ID…" : "Sign in with Face ID"}
-          </Button>
           <button className="min-h-11 w-full text-[17px] text-gold-text" onClick={() => go("/forgot")}>Forgot password</button>
         </div>
         <div className="mt-6">
