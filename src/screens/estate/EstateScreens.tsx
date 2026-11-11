@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AddPropertySheet } from "@/components/AddPropertySheet";
 import { Banner, Button, EmptyState, Field, Group, Hero, Locked, Page, Photo, PriorityChip, ProgressBar, Row, SearchField, Section, Segmented, ShareSheet, StatusChip, Timeline, useGo } from "@/components/ios/ui";
 import { dayLabel, fullName, money, uid, usDate, usDateTime } from "@/lib/format";
 import { haptic } from "@/lib/haptic";
@@ -10,11 +11,18 @@ const WORK_FLOW: WorkStatus[] = ["requested", "contacted", "scheduled", "in_prog
 export function PropertyListScreen() {
   const { data, me } = useEstate();
   const go = useGo();
+  const [adding, setAdding] = useState(false);
   if (!me) return null;
   const list = data.properties.filter((p) => me.propertyIds.includes(p.id));
   return (
-    <Page back large title="Properties">
+    <Page back large title="Properties" subtitle={me.role === "manager" ? "Houses you run for the estate" : "Houses shared with you"}>
+      {me.role === "manager" && (
+        <Button className="mb-3" onClick={() => setAdding(true)}>
+          Add property
+        </Button>
+      )}
       <div className="space-y-3">
+        {list.length === 0 && <EmptyState image="empty-docs" title="No properties yet" body="Add the first house to start the estate." action={me.role === "manager" ? <Button onClick={() => setAdding(true)}>Add property</Button> : undefined} />}
         {list.map((p) => (
           <button key={p.id} onClick={() => go(`/app/properties/${p.id}`)} className="block w-full text-left">
             <Hero name={p.image} alt={p.name} className="h-44">
@@ -25,6 +33,7 @@ export function PropertyListScreen() {
           </button>
         ))}
       </div>
+      {me.role === "manager" && <AddPropertySheet open={adding} onClose={() => setAdding(false)} />}
     </Page>
   );
 }
@@ -41,7 +50,10 @@ export function PropertyDetailScreen({ id }: { id: string }) {
   return (
     <div className="pb-8">
       <Hero name={home.image} alt={home.name} className="h-64 rounded-none">
-        <button className="mb-8 text-[17px]" onClick={() => history.back()}>Back</button>
+        <div className="mb-8 flex items-center justify-between">
+          <button className="min-h-11 text-[17px]" onClick={() => go("/app/properties")}>Back</button>
+          <button className="min-h-11 text-[17px] font-semibold text-gold" onClick={() => go("/app")}>Home</button>
+        </div>
         <p className="text-[28px] font-bold">{home.name}</p>
         <p className="text-[15px]">{home.address}, {home.city}</p>
       </Hero>

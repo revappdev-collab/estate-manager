@@ -442,23 +442,35 @@ export function EmptyState({
   body: string;
   action?: ReactNode;
 }) {
+  const go = useGo();
   return (
     <div className="px-2 py-8 text-center">
       <Photo name={image} alt="" className="mx-auto h-36 w-36 rounded-[16px] object-cover" />
       <h2 className="mt-4 text-[22px] font-semibold">{title}</h2>
       <p className="mx-auto mt-1 max-w-[280px] text-[15px] text-soft">{body}</p>
-      {action && <div className="mx-auto mt-4 max-w-[240px]">{action}</div>}
+      <div className="mx-auto mt-4 max-w-[240px] space-y-2">
+        {action}
+        {!action && (
+          <Button tone="secondary" onClick={() => go("/app")}>
+            Back to home
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
 
 export function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const go = useGo();
   return (
     <div className="px-2 py-10 text-center">
       <h2 className="text-[22px] font-semibold">Couldn’t load this</h2>
       <p className="mx-auto mt-1 max-w-[280px] text-[15px] text-soft">The house network didn’t answer. Your records are still here.</p>
-      <div className="mx-auto mt-4 max-w-[200px]">
+      <div className="mx-auto mt-4 max-w-[240px] space-y-2">
         <Button onClick={onRetry}>Try again</Button>
+        <Button tone="secondary" onClick={() => go("/app")}>
+          Back to home
+        </Button>
       </div>
     </div>
   );
@@ -544,12 +556,19 @@ export function Page({
   children: ReactNode;
 }) {
   const router = useRouter();
+  const go = useGo();
+  const leave = () => {
+    const state = window.history.state as { idx?: number; __TSR_index?: number } | null;
+    const idx = state?.__TSR_index ?? state?.idx;
+    if (typeof idx === "number" ? idx > 0 : window.history.length > 1) router.history.back();
+    else go("/app");
+  };
   return (
     <div className="pb-8">
       <header className="sticky top-0 z-20 bg-bg/88 px-4 backdrop-blur-xl pt-[max(8px,env(safe-area-inset-top))]">
         <div className="flex h-12 items-center gap-1">
           {back ? (
-            <IconButton label="Back" onClick={() => router.history.back()}>
+            <IconButton label="Back" onClick={leave}>
               <ChevronLeft />
             </IconButton>
           ) : (
@@ -557,7 +576,13 @@ export function Page({
           )}
           {!large && title && <h1 className="min-w-0 flex-1 truncate px-1 text-center text-[17px] font-semibold">{title}</h1>}
           {large && <span className="flex-1" />}
-          {trailing ?? <span className="w-11" />}
+          {back && !trailing ? (
+            <button className="min-h-11 shrink-0 px-1 text-[15px] font-semibold text-gold-text" onClick={() => go("/app")}>
+              Home
+            </button>
+          ) : (
+            (trailing ?? <span className="w-11" />)
+          )}
         </div>
       </header>
       {large && title && (
@@ -728,10 +753,16 @@ export function SwipeRow({
 }
 
 export function Locked({ title = "Not shared with your account" }: { title?: string }) {
+  const go = useGo();
   return (
     <div className="rounded-[16px] bg-surface px-4 py-8 text-center">
       <p className="text-[17px] font-semibold">{title}</p>
       <p className="mt-1 text-[15px] text-soft">Ask James Carter if you need this record.</p>
+      <div className="mx-auto mt-4 max-w-[220px]">
+        <Button tone="secondary" onClick={() => go("/app")}>
+          Back to home
+        </Button>
+      </div>
     </div>
   );
 }

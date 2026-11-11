@@ -443,7 +443,7 @@ export function ProfileScreen() {
       </Section>
       <div className="mt-4 space-y-2">
         <Button tone="secondary" onClick={() => setHelp(true)}>Help</Button>
-        <Button tone="secondary" onClick={() => { logout(); go("/welcome"); }}>Sign out</Button>
+        <Button tone="secondary" onClick={() => { logout(); go("/sign-in"); }}>Sign out</Button>
         <Button tone="destructive" onClick={() => setDeleteOpen(true)}>Delete account</Button>
       </div>
       <Sheet open={help} onClose={() => setHelp(false)} title="Help">
@@ -453,7 +453,7 @@ export function ProfileScreen() {
       <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete account">
         <p className="text-[17px]">This removes your sign-in on this device. Hawthorne keeps the household record.</p>
         <div className="mt-3 space-y-2">
-          <Button tone="destructive" onClick={() => { if (me.id.startsWith("p-")) dispatch({ type: "revoke", id: me.id, actorId: me.id }); logout(); go("/welcome"); }}>Delete and sign out</Button>
+          <Button tone="destructive" onClick={() => { if (me.id.startsWith("p-")) dispatch({ type: "revoke", id: me.id, actorId: me.id }); logout(); go("/sign-in"); }}>Delete and sign out</Button>
           <Button tone="secondary" onClick={() => setDeleteOpen(false)}>Keep my account</Button>
         </div>
       </Sheet>

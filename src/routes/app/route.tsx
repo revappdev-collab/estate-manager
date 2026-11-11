@@ -19,7 +19,7 @@ function AppLayout() {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!user) go("/welcome");
+    if (!user) go("/sign-in");
     else if (!session.propertyChosen) go("/select-property");
   }, [hydrated, user, session.propertyChosen, go]);
 
@@ -29,10 +29,13 @@ function AppLayout() {
 
   if (!hydrated || !user || !session.propertyChosen) {
     return (
-      <div className="flex h-full items-center justify-center bg-navy">
+      <div className="flex h-full flex-col items-center justify-center gap-6 bg-navy px-8">
         <div className="rounded-[24px] bg-[#F7F5F0] px-5 py-4">
           <Logo className="h-16" />
         </div>
+        <button className="min-h-11 text-[17px] text-gold" onClick={() => go(user ? "/select-property" : "/sign-in")}>
+          {user ? "Choose a property" : "Back to sign in"}
+        </button>
       </div>
     );
   }

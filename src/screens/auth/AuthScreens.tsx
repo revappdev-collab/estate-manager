@@ -15,7 +15,7 @@ const SLIDES = [
 ];
 
 export function SplashScreen() {
-  const { user, session, hydrated } = useApp();
+  const { hydrated } = useApp();
   const go = useGo();
   const [motion, setMotion] = useState(true);
 
@@ -26,14 +26,9 @@ export function SplashScreen() {
   useEffect(() => {
     if (!hydrated) return;
     const delay = motion ? 2400 : 700;
-    const t = window.setTimeout(() => {
-      if (user && session.propertyChosen) go("/app");
-      else if (user) go("/select-property");
-      else if (session.onboarded) go("/welcome");
-      else go("/onboarding");
-    }, delay);
+    const t = window.setTimeout(() => go("/onboarding"), delay);
     return () => window.clearTimeout(t);
-  }, [hydrated, user, session.propertyChosen, session.onboarded, motion, go]);
+  }, [hydrated, motion, go]);
 
   return (
     <div className="relative flex h-full flex-col items-center justify-center overflow-hidden bg-navy px-8">
@@ -52,6 +47,9 @@ export function SplashScreen() {
         </div>
       </div>
       <p className={cn("mt-7 text-[15px] tracking-[0.18em] text-gold uppercase", motion && "em-rise")}>Hawthorne Estate</p>
+      <button className="absolute inset-x-8 bottom-[max(24px,env(safe-area-inset-bottom))] min-h-11 text-[17px] text-gold" onClick={() => go("/onboarding")}>
+        Continue
+      </button>
     </div>
   );
 }
@@ -64,7 +62,7 @@ export function OnboardingScreen() {
   const last = index === SLIDES.length - 1;
   const finish = () => {
     markOnboarded();
-    go("/welcome");
+    go("/sign-in");
   };
   const goTo = (next: number) => {
     haptic("light");
@@ -436,6 +434,12 @@ export function SelectPropertyScreen() {
       <h1 className="mt-4 text-[34px] font-bold leading-tight">Which house?</h1>
       <p className="mt-1 text-[17px] text-soft">{user.firstName}, you have access to {properties.length} properties.</p>
       <div className="mt-4 space-y-3">
+        {properties.length === 0 && (
+          <div className="rounded-[16px] bg-surface px-4 py-6 text-center">
+            <p className="text-[17px]">No house is on your access list yet.</p>
+            <div className="mt-4"><Button onClick={() => go("/sign-in")}>Back to sign in</Button></div>
+          </div>
+        )}
         {properties.map((p) => (
           <button
             key={p.id}

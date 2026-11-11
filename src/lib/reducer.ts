@@ -14,6 +14,7 @@ import type {
   Issue,
   Notice,
   Person,
+  Property,
   ShoppingItem,
   ShoppingStatus,
   Task,
@@ -23,6 +24,7 @@ import type {
 
 export type Action =
   | { type: "add-person"; person: Person; actorId: string }
+  | { type: "add-property"; property: Property; actorId: string }
   | { type: "update-person"; id: string; patch: Partial<Person>; actorId: string }
   | { type: "revoke"; id: string; actorId: string }
   | { type: "create-task"; task: Task; actorId: string }
@@ -84,6 +86,19 @@ export function reduce(data: Data, action: Action): Data {
   switch (action.type) {
     case "add-person":
       return audit({ ...data, people: [...data.people, action.person] }, { actorId: action.actorId, action: "Invite", detail: `Invited ${action.person.firstName} ${action.person.lastName}.` });
+    case "add-property":
+      return audit(
+        {
+          ...data,
+          properties: [...data.properties, action.property],
+          people: data.people.map((p) =>
+            p.id === action.actorId && !p.propertyIds.includes(action.property.id)
+              ? { ...p, propertyIds: [...p.propertyIds, action.property.id] }
+              : p,
+          ),
+        },
+        { actorId: action.actorId, action: "Property", detail: `Added ${action.property.name}.` },
+      );
     case "update-person":
       return { ...data, people: data.people.map((p) => (p.id === action.id ? { ...p, ...action.patch } : p)) };
     case "revoke":
